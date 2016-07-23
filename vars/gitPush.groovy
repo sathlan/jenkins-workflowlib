@@ -1,3 +1,4 @@
+// https://github.com/jenkinsci/workflow-cps-global-lib-plugin
 def call(String remoteUrl, String branch, String credentialsId, String repoName = 'origin') {
     sshagent([credentialsId]) {
       sh("grep -q github.com ~/.ssh/known_hosts || ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts")
