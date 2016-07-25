@@ -1,3 +1,3 @@
 def call(String cmd, String venv = 'venv') {
-  sh("source ${venv}/bin/activate && ${cmd}")
+  sh(". ${venv}/bin/activate && ${cmd}")
 }
