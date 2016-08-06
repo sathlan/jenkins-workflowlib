@@ -1,6 +1,6 @@
 def call(String project, String host, String user = 'root') {
-  def tpl_file = '/home/vagrant/Vagrantfile.tpl'
-  def tpl_file_dest = "spec/acceptance/nodesets/centos-puppet-#{project}.yml"
+  def tpl_file = '/home/vagrant/centos-puppet.yml'
+  def tpl_file_dest = "spec/acceptance/nodesets/centos-puppet-${project}.yml"
   sh("cp ${tpl_file} ${tpl_file_dest}")
   sh("echo \"gem 'beaker', :git => 'https://github.com/sathlan/beaker.git', :branch => 'feature/libvirt_options'\" >> Gemfile")
   sh('bundle install --binstubs')
