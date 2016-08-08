@@ -7,5 +7,10 @@ def call(String project, String host, String user = 'root') {
   sh("sed -i -e 's/%MODULE%/${project}-${env.BUILD_ID}/' ${tpl_file_dest}")
   sh("sed -i -e 's/%USER%/${user}/' ${tpl_file_dest}")
   sh("sed -i -e 's/%HOST%/${host}/' ${tpl_file_dest}")
-  sh("env BEAKER_destroy=no BEAKER_set=centos-puppet-${project} BEAKER_debug=yes ./bin/rake beaker")
+  // TODO: debug start
+  sh("cat spec/acceptance/nodesets/centos-puppet-neutron.yml")
+  sh("vagrant plugin list")
+  sh("env && id")
+  // TODO: debug end
+  sh("env HOME=/home/vagrant BEAKER_destroy=no BEAKER_set=centos-puppet-${project} BEAKER_debug=yes ./bin/rake beaker")
 }
