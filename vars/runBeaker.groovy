@@ -7,5 +7,6 @@ def call(String project, String host, String user = 'root') {
   sh("sed -i -e 's/%MODULE%/${project}-${env.BUILD_ID}/' ${tpl_file_dest}")
   sh("sed -i -e 's/%USER%/${user}/' ${tpl_file_dest}")
   sh("sed -i -e 's/%HOST%/${host}/' ${tpl_file_dest}")
+  stage "Running beaker"
   sh("env HOME=/home/vagrant BEAKER_destroy=no BEAKER_set=centos-puppet-${project} BEAKER_debug=yes ./bin/rake beaker")
 }
