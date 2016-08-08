@@ -9,7 +9,6 @@ def call(String desc, body) {
     node ('local') {
       sshagent(['jenkins']) {
         ansiColor() {
-          current_step = "${desc}"
           body()
         }
       }
