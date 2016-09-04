@@ -1,6 +1,9 @@
 def call(String credentialsId, String repoName = 'origin') {
     sshagent([credentialsId]) {
       addSshHostEntry('github.com')
-      sh("git -c core.askpass=true push ${repoName}")
+      (repo, branch) =  env.JOB_NAME.split("/")
+      sh("git checkout ${branch}")
+      sh("git git remote add github ${env.GITHUB_ACCOUNT}/${repo}.git")
+      sh("git push github ${branch}")
     }
 }
