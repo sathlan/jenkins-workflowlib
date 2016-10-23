@@ -1,5 +1,6 @@
 def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boolean needPuppet = false, Boolean isPublic = false) {
   gitEnv()
+  def dockerOriginalName = dockerName
 
   if (isApp) {
     dockerName = "app-${dockerName}"
@@ -77,7 +78,7 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
           }
 
           if (isApp) {
-            def dockerNameUp = appName.toUpperCase()
+            def dockerNameUp = dockerOriginalName.toUpperCase()
             def appVersion = "${dockerNameUp}_APP_VERSION"
             def appDir = "${dockerNameUp}_APP_DIR"
             withEnv(["${appVersion}=${env.BUILD_ID}", "${appDir}=${currentDir}/spec/fixture"]) {
