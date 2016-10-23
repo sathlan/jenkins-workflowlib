@@ -77,7 +77,7 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
           }
 
           if (!isApp.isAllWhitespace()) {
-            def dockerNameUp = appName.upcase()
+            def dockerNameUp = appName.toUpperCase()
             def appVersion = "${dockerNameUp}_APP_VERSION"
             def appDir = "${dockerNameUp}_APP_DIR"
             withEnv(["${appVersion}=${env.BUILD_ID}", "${appDir}=${currentDir}/spec/fixture"]) {
