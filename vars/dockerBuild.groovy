@@ -6,6 +6,8 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
   }
 
   def dockerOpt = ''
+  def remotePuppetImage = ''
+
   def currentDir = "${pwd()}"
 
   if (isSystemd) {
@@ -13,7 +15,7 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
   }
 
   if (needPuppet) {
-    def remotePuppetImage = "${env.DOCKER_PRV_REGISTRY_HOSTNAME}/sathlan/puppet-client:latest"
+    remotePuppetImage = "${env.DOCKER_PRV_REGISTRY_HOSTNAME}/sathlan/puppet-client:latest"
   }
 
 
@@ -47,7 +49,7 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
             def changed_files = sh(returnStdout: true, script: "git diff-tree --no-commit-id --name-only -r ${env.GIT_COMMIT}")
             // Empty list is the initial commit.
             if (changed_files =~ /(?m)^puppet/ || changed_files.allWhitespace) {
-              docker.image(remote_puppet_image).withRun("${dockerOpt} -v /opt/puppetlabs") {p ->
+              docker.image(remotePuppetImage).withRun("${dockerOpt} -v /opt/puppetlabs") {p ->
                 myEnv.withRun("${dockerOpt} --volumes-from ${p.id} -e PATH=/opt/puppetlabs/bin:${env.PATH} -v ${currentDir}:${currentDir}:z --entrypoint /usr/sbin/init -u 0") {m ->
                   sh "docker exec -t ${m.id} puppet module install --modulepath ${currentDir}/puppet/modules --target-dir ${currentDir}/puppet/modules puppetlabs-postgresql"
                   sh "docker exec -t ${m.id} puppet apply --debug --modulepath ${currentDir}/puppet/modules ${currentDir}/puppet/manifest.pp"
