@@ -77,7 +77,6 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
           }
 
           if (!isApp.isAllWhitespace()) {
-            METASPLOIT_APP_VERSION
             def dockerNameUp = appName.upcase()
             def appVersion = "${dockerNameUp}_APP_VERSION"
             def appDir = "${dockerNameUp}_APP_DIR"
