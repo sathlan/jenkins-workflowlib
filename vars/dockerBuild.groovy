@@ -1,4 +1,6 @@
 def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boolean needPuppet = false, Boolean isPublic = false) {
+  gitEnv()
+
   if (isApp) {
     dockerName = "app-${dockerName}"
   }
