@@ -76,7 +76,7 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
             }
           }
 
-          if (!isApp.isAllWhitespace()) {
+          if (isApp) {
             def dockerNameUp = appName.toUpperCase()
             def appVersion = "${dockerNameUp}_APP_VERSION"
             def appDir = "${dockerNameUp}_APP_DIR"
