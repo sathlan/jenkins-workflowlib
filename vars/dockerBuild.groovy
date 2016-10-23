@@ -83,7 +83,7 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
             def appDir = "${dockerNameUp}_APP_DIR"
             withEnv(["${appVersion}=${env.BUILD_ID}", "${appDir}=${currentDir}/spec/fixture"]) {
               sh "env"
-              sh "bash -x ./bin/app-${dockerName} --version"
+              sh "bash -x ./bin/${dockerName} --version"
             }
           }
         }
