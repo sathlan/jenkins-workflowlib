@@ -1,6 +1,6 @@
 def call(String msg) {
   def answer = false
-  if (!env.DONT_ASK) {
+  if (env.DONT_ASK != 'true' && env.DONT_ASK != true) {
     node ('local') {
       matterMost 'good', "${env.BRANCH_NAME}: Asking about ${msg} (${env.BUILD_URL}/console)"
     }
