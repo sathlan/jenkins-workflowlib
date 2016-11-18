@@ -4,7 +4,7 @@ def call(String desc, body) {
 
     if (y) {
       node ('local') {
-        sshagent(['jenkins']) {
+        sshagent([env.SSH_CREDENTIAL_ID]) {
           ansiColor() {
             body()
           }
