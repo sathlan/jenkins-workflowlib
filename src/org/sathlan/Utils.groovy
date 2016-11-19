@@ -46,3 +46,17 @@ def findDefaultValueFrom(env, String name, String prefix='', String defString = 
   }
   value
 }
+
+def findTrueFalseFrom(env, String name, String prefix = '', String fallback = 'false') {
+  def trueFalse = ''
+  if (isTrueOrFalse(env[name])) {
+    trueFalse = env[name]
+  } else if (utils.isTrueOrFalse(env["${prefix}_${name}_${env.BRANCH_NAME}"])) {
+    trueFalse = env["${prefix}_${name}_${env.BRANCH_NAME}"]
+  } else if (utils.isTrueOrFalse(env["${name}_${prefix}"])) {
+    trueFalse = env["${name}_${prefix}"]
+  } else {
+    trueFalse = fallback
+  }
+  trueFalse
+}
