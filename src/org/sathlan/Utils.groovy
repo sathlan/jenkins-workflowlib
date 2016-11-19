@@ -16,6 +16,18 @@ def isTrueOrFalse(value) {
   isTrue(value) || isFalse(value)
 }
 
+// Find value from the env.NAME variable but with default fallback on
+// 1. env.PREFIX_NAME_<BRANCH>
+// 2. env.PREFIX_NAME
+
+// The user can then set the value by project branch and global default.
+
+// When using text property, you can set a DEFSTRING that will mean
+// that the user didn't set the value. An example default string could
+// be "CHANGEME".
+
+// Throw an exception if no value is found and set the
+// ERROR_MISSING_VARIABLE in the env to 'true'
 def findDefaultValueFrom(env, String name, String prefix='', String defString = 'CHANGEME') {
   def value = ''
   def valuePrefix = "${prefix}_${name}"
