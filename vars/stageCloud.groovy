@@ -1,10 +1,10 @@
-def call(String desc, body) {
+def call(String desc, String ssh_cred_id='jenkins', body) {
   stage("${desc}") {
     y = askForNextStep "${desc} ?"
 
     if (y) {
       node ('local') {
-        sshagent([env.SSH_CREDENTIAL_ID]) {
+        sshagent([ssh_cred_id]) {
           ansiColor() {
             body()
           }
