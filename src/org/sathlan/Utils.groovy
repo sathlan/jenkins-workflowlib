@@ -63,9 +63,9 @@ def findTrueFalseFrom(env, String name, String prefix = '', String fallback = 'f
   def trueFalse = ''
   if (isTrueOrFalse(env[name])) {
     trueFalse = env[name]
-  } else if (utils.isTrueOrFalse(env["${prefix}_${name}_${env.BRANCH_NAME}"])) {
+  } else if (isTrueOrFalse(env["${prefix}_${name}_${env.BRANCH_NAME}"])) {
     trueFalse = env["${prefix}_${name}_${env.BRANCH_NAME}"]
-  } else if (utils.isTrueOrFalse(env["${name}_${prefix}"])) {
+  } else if (isTrueOrFalse(env["${name}_${prefix}"])) {
     trueFalse = env["${name}_${prefix}"]
   } else {
     trueFalse = fallback
