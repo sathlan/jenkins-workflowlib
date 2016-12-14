@@ -72,6 +72,7 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
         stage('test image') {
           myEnv.withRun("${dockerOpt}") {c ->
             withEnv(rubyEnv + ["${dockerName.replaceAll('-','_').toUpperCase()}_ID=${c.id}", "LOCALHOST_ID=${c.id}", "DOCKER_IMAGE=${buildImage}"]) {
+              sh "env"
               sh "rake spec:${dockerName}"
               sh "rake spec:localhost"
             }
@@ -101,7 +102,7 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
             timeout(time: 1, unit: 'DAYS') {
               if (askForNextStep('Deploy to GitHub ?')) {
                 lock("githubPush-docker-${dockerName}") {
-                  githubPush('jenkins', 'github')
+                  githubPush("jenkins-docker-${dockerName}", 'github')
                   if (askForNextStep('Release to GitHub ?')) {
                     withEnv(rubyEnv) {
                       githubRelease()
