@@ -66,52 +66,58 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
             sh "rm -rf artifacts && mkdir -p artifacts"
             sh "docker inspect ${c.id} > artifacts/inspect.txt"
             sh "docker history ${buildImage} > artifacts/history.txt"
+            sh "docker diff ${c.id} > artifacts/files-diff.log"
           }
         }
+        try {
+          stage('test image') {
+            myEnv.withRun("${dockerOpt}") {c ->
+              withEnv(rubyEnv + ["${dockerName.replaceAll('-','_').toUpperCase()}_ID=${c.id}", "LOCALHOST_ID=${c.id}", "DOCKER_IMAGE=${buildImage}"]) {
+                sh "env"
+                sh "rake spec:${dockerName}"
+                sh "rake spec:localhost"
+              }
+            }
 
-        stage('test image') {
-          myEnv.withRun("${dockerOpt}") {c ->
-            withEnv(rubyEnv + ["${dockerName.replaceAll('-','_').toUpperCase()}_ID=${c.id}", "LOCALHOST_ID=${c.id}", "DOCKER_IMAGE=${buildImage}"]) {
-              sh "env"
-              sh "rake spec:${dockerName}"
-              sh "rake spec:localhost"
+            if (isApp) {
+              def dockerNameUp = dockerOriginalName.toUpperCase()
+              def appVersion = "${dockerNameUp}_APP_VERSION"
+              def appDir = "${dockerNameUp}_APP_DIR"
+              withEnv(["${appVersion}=${env.BUILD_ID}", "${appDir}=${currentDir}/spec/fixture"]) {
+                sh "env"
+                sh "bash -x ./bin/${dockerName} --version"
+              }
             }
           }
 
-          if (isApp) {
-            def dockerNameUp = dockerOriginalName.toUpperCase()
-            def appVersion = "${dockerNameUp}_APP_VERSION"
-            def appDir = "${dockerNameUp}_APP_DIR"
-            withEnv(["${appVersion}=${env.BUILD_ID}", "${appDir}=${currentDir}/spec/fixture"]) {
-              sh "env"
-              sh "bash -x ./bin/${dockerName} --version"
+          stage('promote') {
+            myEnv.push('latest')
+            def tag = sh returnStdout: true, script: 'git describe --exact-match HEAD || true'
+            tag = tag.trim()
+            if (tag =~ /^v.*/) {
+              myEnv.push(tag)
+              sh "echo ${tag} > artifacts/RELEASE"
             }
-          }
-        }
-
-        stage('promote') {
-          myEnv.push('latest')
-          def tag = sh returnStdout: true, script: 'git describe --exact-match HEAD || true'
-          tag = tag.trim()
-          if (tag =~ /^v.*/) {
-            myEnv.push(tag)
-            sh "echo ${tag} > artifacts/RELEASE"
-          }
-          archive 'artifacts/'
-          if(isPublic) {
-            timeout(time: 1, unit: 'DAYS') {
-              if (askForNextStep('Deploy to GitHub ?')) {
-                lock("githubPush-docker-${dockerName}") {
-                  githubPush("jenkins-docker-${dockerName}", 'github')
-                  if (askForNextStep('Release to GitHub ?')) {
-                    withEnv(rubyEnv) {
-                      githubRelease()
+            if(isPublic) {
+              timeout(time: 1, unit: 'DAYS') {
+                if (askForNextStep('Deploy to GitHub ?')) {
+                  lock("githubPush-docker-${dockerName}") {
+                    githubPush("jenkins-docker-${dockerName}", 'github')
+                    if (askForNextStep('Release to GitHub ?')) {
+                      withEnv(rubyEnv) {
+                        githubRelease()
+                      }
                     }
                   }
                 }
               }
             }
           }
+        } catch(any) {
+          echo "Got Groovy exception ${any.getMessage()}"
+          throw any
+        } finally {
+          archive 'artifacts/'
         }
       }
     }
