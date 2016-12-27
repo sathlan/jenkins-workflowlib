@@ -1,6 +1,7 @@
 def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boolean needPuppet = false, Boolean isPublic = false) {
   gitEnv()
   def dockerOriginalName = dockerName
+  def rspecEnv = "GENERATE_REPORTS=true"
 
   if (isApp) {
     dockerName = "app-${dockerName}"
@@ -72,7 +73,7 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
         try {
           stage('test image') {
             myEnv.withRun("${dockerOpt}") {c ->
-              withEnv(rubyEnv + ["${dockerName.replaceAll('-','_').toUpperCase()}_ID=${c.id}", "LOCALHOST_ID=${c.id}", "DOCKER_IMAGE=${buildImage}"]) {
+              withEnv(rubyEnv + rspecEnv + ["${dockerName.replaceAll('-','_').toUpperCase()}_ID=${c.id}", "LOCALHOST_ID=${c.id}", "DOCKER_IMAGE=${buildImage}"]) {
                 sh "env"
                 sh "rake spec:${dockerName}"
                 sh "rake spec:localhost"
@@ -118,6 +119,7 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
           throw any
         } finally {
           archive 'artifacts/'
+          junit allowEmptyResults: true, testResults: 'spec/reports/*.xml'
         }
       }
     }
