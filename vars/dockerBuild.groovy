@@ -74,8 +74,8 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
             myEnv.withRun("${dockerOpt}") {c ->
               withEnv(rubyEnv + ["${dockerName.replaceAll('-','_').toUpperCase()}_ID=${c.id}", "LOCALHOST_ID=${c.id}", "DOCKER_IMAGE=${buildImage}"]) {
                 sh "env && rm -rf spec/reports && mkdir -p spec/reports"
-                sh "SPEC_OPTS='--no-color --format RspecJunitFormatter --out spec/reports/${dockerName}.xml' rake spec:${dockerName}"
-                sh "SPEC_OPTS='--no-color --format RspecJunitFormatter --out spec/reports/localhost.xml' rake spec:localhost"
+                sh "SPEC_OPTS='--format RspecJunitFormatter --out spec/reports/${dockerName}.xml' rake spec:${dockerName}"
+                sh "SPEC_OPTS='--format RspecJunitFormatter --out spec/reports/localhost.xml' rake spec:localhost"
               }
             }
 
@@ -118,6 +118,7 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
           throw any
         } finally {
           archive 'artifacts/'
+          sh """[ ! -e spec/reports/localhost.xml ] || sed -i -r -e "s/\\xEF\\xBF\\xBD\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" -e "s/\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" spec/reports/${dockerName}.xml spec/reports/localhost.xml """
           junit allowEmptyResults: true, testResults: 'spec/reports/*.xml'
         }
       }
