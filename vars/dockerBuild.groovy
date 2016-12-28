@@ -32,45 +32,44 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
     }
 
     ansiColor() {
-      try {
-        stage('Prepare env') {
-          withEnv(rubyEnv) {
-            sh "[ ! -e Gemfile.lock ] || rm Gemfile.lock"
-            sh "bundle install --binstubs"
-          }
+      stage('Prepare env') {
+        withEnv(rubyEnv) {
+          sh "[ ! -e Gemfile.lock ] || rm Gemfile.lock"
+          sh "bundle install --binstubs"
+        }
+      }
+
+      docker.withRegistry("${env.DOCKER_PRV_REGISTRY}", 'docker-private-registry') {
+        stage('build image') {
+          myEnv = docker.build "${imageName}:${env.BUILD_ID}", "${dockerBuildOpt}"
         }
 
-        docker.withRegistry("${env.DOCKER_PRV_REGISTRY}", 'docker-private-registry') {
-          stage('build image') {
-            myEnv = docker.build "${imageName}:${env.BUILD_ID}", "${dockerBuildOpt}"
-          }
-
-          if (needPuppet) {
-            stage('puppet configure') {
-              // detect if puppet files have changed
-              def changed_files = sh(returnStdout: true, script: "git diff-tree --no-commit-id --name-only -r ${env.GIT_COMMIT}")
-              // Empty list is the initial commit.
-              if (changed_files =~ /(?m)^puppet/ || changed_files.allWhitespace) {
-                docker.image(remotePuppetImage).withRun("${dockerOpt} -v /opt/puppetlabs") {p ->
-                  myEnv.withRun("${dockerOpt} --volumes-from ${p.id} -e PATH=/opt/puppetlabs/bin:${env.PATH} -v ${currentDir}:${currentDir}:z --entrypoint /usr/sbin/init -u 0") {m ->
-                    sh "docker exec -t ${m.id} puppet module install --modulepath ${currentDir}/puppet/modules --target-dir ${currentDir}/puppet/modules puppetlabs-postgresql"
-                    sh "docker exec -t ${m.id} puppet apply --debug --modulepath ${currentDir}/puppet/modules ${currentDir}/puppet/manifest.pp"
-                    sh "docker commit -m 'Puppet configuration' ${m.id} ${buildImage}"
-                  }
+        if (needPuppet) {
+          stage('puppet configure') {
+            // detect if puppet files have changed
+            def changed_files = sh(returnStdout: true, script: "git diff-tree --no-commit-id --name-only -r ${env.GIT_COMMIT}")
+            // Empty list is the initial commit.
+            if (changed_files =~ /(?m)^puppet/ || changed_files.allWhitespace) {
+              docker.image(remotePuppetImage).withRun("${dockerOpt} -v /opt/puppetlabs") {p ->
+                myEnv.withRun("${dockerOpt} --volumes-from ${p.id} -e PATH=/opt/puppetlabs/bin:${env.PATH} -v ${currentDir}:${currentDir}:z --entrypoint /usr/sbin/init -u 0") {m ->
+                  sh "docker exec -t ${m.id} puppet module install --modulepath ${currentDir}/puppet/modules --target-dir ${currentDir}/puppet/modules puppetlabs-postgresql"
+                  sh "docker exec -t ${m.id} puppet apply --debug --modulepath ${currentDir}/puppet/modules ${currentDir}/puppet/manifest.pp"
+                  sh "docker commit -m 'Puppet configuration' ${m.id} ${buildImage}"
                 }
               }
             }
           }
+        }
 
-          stage('publish image') {
-            myEnv.withRun(dockerOpt) {c ->
-              sh "rm -rf artifacts && mkdir -p artifacts"
-              sh "docker inspect ${c.id} > artifacts/inspect.txt"
-              sh "docker history ${buildImage} > artifacts/history.txt"
-              sh "docker diff ${c.id} > artifacts/files-diff.log"
-            }
+        stage('publish image') {
+          myEnv.withRun(dockerOpt) {c ->
+            sh "rm -rf artifacts && mkdir -p artifacts"
+            sh "docker inspect ${c.id} > artifacts/inspect.txt"
+            sh "docker history ${buildImage} > artifacts/history.txt"
+            sh "docker diff ${c.id} > artifacts/files-diff.log"
           }
-
+        }
+        try {
           stage('test image') {
             myEnv.withRun("${dockerOpt}") {c ->
               withEnv(rubyEnv + ["${dockerName.replaceAll('-','_').toUpperCase()}_ID=${c.id}", "LOCALHOST_ID=${c.id}", "DOCKER_IMAGE=${buildImage}"]) {
@@ -114,13 +113,13 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
               }
             }
           }
+        } catch(any) {
+          echo "Got Groovy exception ${any.getMessage()}"
+          throw any
+        } finally {
+          archive 'artifacts/'
+          junit allowEmptyResults: true, testResults: 'spec/reports/*.xml'
         }
-      } catch(any) {
-        echo "Got Groovy exception ${any.getMessage()}"
-        throw any
-      } finally {
-        archive 'artifacts/'
-        junit allowEmptyResults: true, testResults: 'spec/reports/*.xml'
       }
     }
   }
