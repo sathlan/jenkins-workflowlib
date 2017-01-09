@@ -125,7 +125,8 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
           throw any
         } finally {
           archive 'artifacts/'
-          sh """[ ! -e spec/reports/localhost.xml ] || sed -i -r -e "s/\\xEF\\xBF\\xBD\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" -e "s/\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" spec/reports/${dockerName}.xml spec/reports/localhost.xml spec/reports/compose.xml"""
+          sh """[ ! -e spec/reports/localhost.xml ] || sed -i -r -e "s/\\xEF\\xBF\\xBD\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" -e "s/\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" spec/reports/${dockerName}.xml spec/reports/localhost.xml"""
+          sh """[ ! -e spec/reports/compose.xml ] || sed -i -r -e "s/\\xEF\\xBF\\xBD\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" -e "s/\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" spec/reports/compose.xml"""
           junit allowEmptyResults: true, testResults: 'spec/reports/*.xml'
         }
       }
