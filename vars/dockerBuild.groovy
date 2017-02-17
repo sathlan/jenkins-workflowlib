@@ -1,4 +1,4 @@
-def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boolean needPuppet = false, Boolean isPublic = false, String compose = '') {
+def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boolean needPuppet = false, Boolean isPublic = false, String compose = '', Boolean needSalt = false) {
   gitEnv()
   def dockerOriginalName = dockerName
 
@@ -17,6 +17,10 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
 
   if (needPuppet) {
     remotePuppetImage = "${env.DOCKER_PRV_REGISTRY_HOSTNAME}/sathlan/puppet-client:latest"
+  }
+
+  if (needSalt) {
+    remoteSaltImage = "${env.DOCKER_PRV_REGISTRY_HOSTNAME}/sathlan/salt-standalone:latest"
   }
 
 
@@ -55,6 +59,22 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
                   sh "docker exec -t ${m.id} puppet module install --modulepath ${currentDir}/puppet/modules --target-dir ${currentDir}/puppet/modules puppetlabs-postgresql"
                   sh "docker exec -t ${m.id} puppet apply --debug --modulepath ${currentDir}/puppet/modules ${currentDir}/puppet/manifest.pp"
                   sh "docker commit -m 'Puppet configuration' ${m.id} ${buildImage}"
+                }
+              }
+            }
+          }
+        }
+
+        if (needSalt) {
+          stage('salt configure') {
+            // detect if puppet files have changed
+            def changed_files = sh(returnStdout: true, script: "git diff-tree --no-commit-id --name-only -r ${env.GIT_COMMIT}")
+            // Empty list is the initial commit.
+            if (changed_files =~ /(?m)^(salt|pillar)/ || changed_files.allWhitespace) {
+              docker.image(remoteSaltImage).withRun("${dockerOpt} -v /opt/salt-standalone") {p ->
+                myEnv.withRun("${dockerOpt} --volumes-from ${p.id} -e PATH=/opt/salt-standalone/venv/bin/:${env.PATH} -v ${currentDir}:${currentDir}:z -v ${currentDir}/salt:/srv/salt -v ${currentDir}/pillar:/srv/pillar --entrypoint /usr/sbin/init -u 0") {m ->
+                  sh "docker exec -t ${m.id} salt-call -c /opt/salt-standalone/etc/salt state.highstate"
+                  sh "docker commit -m 'Salt configuration' ${m.id} ${buildImage}"
                 }
               }
             }
