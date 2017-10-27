@@ -119,7 +119,6 @@ def call(String dockerName, Boolean isSystemd = true, Boolean isApp = false, Boo
 
           stage('promote') {
             myEnv.push('latest')
-            sh "git fetch --tags"
             def tag = sh returnStdout: true, script: 'git describe --exact-match HEAD || true'
             tag = tag.trim()
             if (tag =~ /^v.*/) {
